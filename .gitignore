@@ -115,9 +115,9 @@ venv.bak/
 .spyproject
 
 # Files 
-.png
-.jpeg
-.csv
+*.png
+*.jpeg
+*.csv
 
 # Rope project settings
 .ropeproject
