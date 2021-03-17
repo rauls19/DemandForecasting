@@ -16,7 +16,7 @@ def removeCellOutputs(data):
 
 if __name__ == '__main__':
     file_name = sys.argv[1]
-    with open(file_name, 'r') as f:
+    with open(file_name, 'r', encoding='utf8') as f:
         nb = nbf.read(f, nbf.NO_CONVERT)
     nb = removeCellOutputs(nb)
     with open(file_name, "w") as f:
