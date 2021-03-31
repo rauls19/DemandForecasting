@@ -8,10 +8,12 @@ import numpy as np
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import train_test_split
 import pickle
-import itertools
-import threading
+import random
+from sklearn.linear_model import LinearRegression
+import xgboost as xgb
+import progressbar
 
-""" def groupData(df, col_groups, ref_col):
+def groupData(df, col_groups, ref_col):
     testing =  df.groupby(col_groups)[ref_col].sum()
     grouped_testing = []
     for k,v in zip(testing.index, testing.values):
@@ -69,9 +71,6 @@ data_info = pd.read_csv('info_datav2.csv')
 data_info = data_info.drop(columns = ['DAY_OF_WEEK'])
 data_info = data_info.sort_values(['ANO_FACTURA', 'MES_FACTURA', 'FECHA_FACTURA'])
 
-print(data_info.shape)
-print(data_info.columns)
-
 data_info_grouped = groupData(data_info, columns, 'IMP_VENTA_NETO_EUR')
 data_info_grouped = data_info_grouped.sort_values(['ANO_FACTURA', 'MES_FACTURA', 'FECHA_FACTURA'])
 data_info_original_grouped = groupData(data_info_original, columns, 'IMP_VENTA_NETO_EUR')
@@ -94,74 +93,47 @@ x_test = x_test.drop(columns = 'EDAD_RANGO_COMPRA')
 normalizer = MinMaxScaler(feature_range = (-1, 1))
 x_train = pd.DataFrame(normalizer.fit_transform(x_train), columns= x_train.columns, index = traindataset.index)
 x_test = pd.DataFrame(normalizer.fit_transform(x_test), columns= x_test.columns, index = testdataset.index)
- """
-import queue
-import random
-from sklearn.linear_model import LinearRegression
-import xgboost as xgb
 
-q = queue.Queue()
-
-def perms(N):
-    pi_N = list(itertools.permutations(N))
-    q.put(pi_N)
-    return pi_N
-
-#print(np.random.permutation(columns))
 fi_i = 0 # contribution of i-th features's value
-m = 3 # number of samples
+m = 100 # number of samples
 
-#print(list(itertools.permutations([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])))
-#t1 = threading.Thread(target= perms, args=(N))
-#t1.start()
-#pi_N = q.get()
-#print(pi_N[0])
-# TEST DATA
-data = pd.DataFrame([[1, 2, 50, 5], [4, 5, 60, 7], [7, 8, 60, 5]], columns = ['A', 'B', 'C', 'D'])
-y_data = pd.DataFrame([57, 70, 85])
-t_data = pd.DataFrame([[5, 2, 100, 4], [3, 4, 80, 7], [7, 9, 30, 0]], columns = ['A', 'B', 'C', 'D'])
-ty_data = pd.DataFrame([108, 95, 65])
-# FI TEST DATA
-N = ['A', 'B', 'C', 'D'] # Features (players)
-pi_N = list(itertools.permutations(N)) # the set of all ordered permutations of N
-# Pre^i(O) the set of players which are predecessors of player i  in the order O
-i = 'C' # observing feature
-columns = ['A', 'B', 'C', 'D']
+ # Features (players)
+N = columns = ['ANO_FACTURA', 'MES_FACTURA', 'FECHA_FACTURA', 'TEMPORADA_COMERCIAL_ID', 'PRODUCTO_ID', 'TALLA', 'ESFUERZO_VENTA_ID', 'NUMERO_DEUDOR_PAIS_ID', 'JERARQUIA_PROD_ID', 'GRUPO_ARTICULO_PRODUCTO_ID', 'GENERO_PRODUCTO', 'CATEGORIA', 'TIPOLOGIA', 'CONSUMER_COLOR', 'CREMALLERA', 'CORDONES', 'OUTSOLE_SUELA_TIPO', 'OUTSOLE_SUELA_SUBTIPO', 'PLANTILLA_EXTRAIBLE', 'CONTACTO_SN', 'EDAD_SN', 'GENERO_CONTACTO', 'EDAD_COMPRA', 'EDAD_RANGO_COMPRA', 'CIUDAD_CONTACTO', 'IDIOMA_CONTACTO']
+i = 'NUMERO_DEUDOR_PAIS_ID' # observing feature
 aux = 0
 model = LinearRegression()
-for j in range(1, m):
-    print('j = ', j)
-    O = random.sample(pi_N, 1)
-    print('Permutation: ', O, '\n')
-    y = data.sample()
-    pre_i_O = []
-    for v in O[0]:
+
+bar = progressbar.ProgressBar(max_value = m)
+
+for j in range(1, (m+1)):
+    O = np.random.permutation(N) # the set of all ordered permutations of N
+    y = x_test.sample()
+    pre_i_O = [] # Pre^i(O) the set of players which are predecessors of player i  in the order O
+    for v in O:
         pre_i_O.append(v)
         if v == i:
             break
     if pre_i_O[0] == i:
-        print('No')
         aux = aux + 1
         continue
-    x = data[data.columns.intersection(pre_i_O)]
+    # PREPARED DATA WITH THE SELECTED COLUMNS
+    x = x_train[x_train.columns.intersection(pre_i_O)]
     y = y[y.columns.intersection(pre_i_O)]
-    print('x data v1: ', x)
-    model.fit(x, y_data)
+    # FI
+    model.fit(x, y_train)
     v1 = model.predict(y)
     v1 = v1[0]
-    print('\n v1 = ', v1)
     pre_i_O.remove(i)
-    x = data[data.columns.intersection(pre_i_O)]
+    # PREPARED DATA WITH THE SELECTED COLUMNS
+    x = x_train[x_train.columns.intersection(pre_i_O)]
     y = y[y.columns.intersection(pre_i_O)]
-    print('x data v2: ', x)
-    model.fit(x, y_data)
+    # FI
+    model.fit(x, y_train)
     v2 = model.predict(y)
     v2 = v2[0]
-    print('\n v2 = ',v2)
     fi_i = fi_i + (v1 - v2)
-    print('\n fi_i = ',fi_i)
+    bar.update(j)
 
-print(list(pre_i_O))
-fi_i = fi_i/(m - 1 - aux)
+fi_i = fi_i/(m - aux)
 
 print('fi_i_total = ', fi_i)
