@@ -15,8 +15,7 @@ def removeCellOutputs(data):
     return data
 
 if __name__ == '__main__':
-    #file_name = sys.argv[1]
-    file_name = 'model.ipynb'
+    file_name = sys.argv[1]
     with open(file_name, 'r', encoding='utf8') as f:
         nb = nbf.read(f, nbf.NO_CONVERT)
     nb = removeCellOutputs(nb)
