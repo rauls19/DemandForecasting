@@ -16,7 +16,7 @@ import os
 import datetime
 import matplotlib.pyplot as plt
 import multiprocessing
-
+from sklearn.neural_network import MLPRegressor
 
 class CoalitionalGame:
 
@@ -32,12 +32,13 @@ class CoalitionalGame:
         self.__features_N = []
 
     def __checkModelAvailability(self):
-        x = pd.DataFrame([[1, 2, 3]])
-        y = pd.DataFrame([1])
+        x = pd.DataFrame(np.random.choice(range(20), size=(50, 4)))
+        y = pd.DataFrame(pd.DataFrame(np.random.choice(range(10), size=(50, 1))))
         try:
-            self.__model.fit(x, y)
+            self.__model.fit(x, np.ravel(y))
             return True            
-        except:
+        except Exception as e:
+            print(e)
             return False
 
     def __getPre_i_o(self, O, target):
@@ -51,8 +52,8 @@ class CoalitionalGame:
     def __calculusContribution(self, target):
         fi_i = 0
         counter_No_Preivalues = 0
-        bar = progressbar.ProgressBar(max_value = self.__m)
-        bar.update(0)
+        showprogressbar = progressbar.ProgressBar(max_value = self.__m, widgets = ['Contribution of '+target+' (', progressbar.Counter('%(value)d'), '/'+str(self.__m)+')', progressbar.Bar('#', ' [', ']'), ' ', progressbar.Percentage()])
+        showprogressbar.start()
         for j in range(1, (self.__m+1)):
             try:
                 O = np.random.permutation(self.__N)
@@ -60,7 +61,7 @@ class CoalitionalGame:
                 pre_i_O = self.__getPre_i_o(O, target)
                 if pre_i_O[0] == target:
                     counter_No_Preivalues = counter_No_Preivalues + 1
-                    bar.update(j)
+                    showprogressbar.update(j)
                     continue
                 # INI - PREPARE DATA WITH SELECTED COLUMNS
                 x = self.x_train[self.x_train.columns.intersection(pre_i_O)]
@@ -76,7 +77,7 @@ class CoalitionalGame:
                 self.__model.fit(x, self.y_train)
                 v2 = self.__model.predict(y)
                 fi_i = fi_i + (v1 - v2)
-                bar.update(j)
+                showprogressbar.update(j)
             except Exception as e:
                 logf = open('Error.log', 'a')
                 er = {'exception:': e, 'O': O, 'Pre^i(O)': pre_i_O, 'fi_i': fi_i, 'target': target, 'x_shape' : x.shape, 'y_shape': y.shape} 
@@ -84,11 +85,12 @@ class CoalitionalGame:
                 logf.write(str(er))
                 logf.close()
                 raise('\n Unexpected error, please check the file called Error.log for further information')
+        showprogressbar.finish()
         if (self.__m - counter_No_Preivalues) == 0:
             final_fi_i = 0
         else:
             final_fi_i = fi_i / (self.__m - counter_No_Preivalues)
-        return final_fi_i
+        self.fi_i_contributions.append({target: self.__extractValue(final_fi_i)})
 
     def __extractValue(self, val):
         value = val
@@ -103,7 +105,7 @@ class CoalitionalGame:
         for i in range(len(self.fi_i_contributions)):
             value = self.fi_i_contributions[i][self.__features_N[i]]
             if max < abs(value):
-                max = value
+                max = abs(value)
             vals.append(value)
         plt.barh(range(len(self.__features_N)), vals)
         plt.yticks(range(len(self.__features_N)), self.__features_N, fontsize = 7)
@@ -115,14 +117,11 @@ class CoalitionalGame:
         if self.__checkModelAvailability() == False:
             print('\n This model is not currently available, sorry for the inconvinience')
             return
+
         if spec_feat == '*':
             spec_feat = self.__N
         
         self.__features_N = spec_feat
-
-        for player in spec_feat:
-            print('\n Calculating contribution of ', player)
-            fi_i_player = self.__calculusContribution(player)
-            p_cont = {player: self.__extractValue(fi_i_player)}
-            self.fi_i_contributions.append(p_cont)
         
+        for player in spec_feat:
+            self.__calculusContribution(player)

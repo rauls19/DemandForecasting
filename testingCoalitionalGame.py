@@ -120,8 +120,8 @@ columns = ['ANO_FACTURA', 'MES_FACTURA', 'FECHA_FACTURA', 'TEMPORADA_COMERCIAL_I
 # END
 
 # INI - TESTING MLP
-nn_reg = MLPRegressor(hidden_layer_sizes=(300, 300),  activation='logistic', solver='adam', alpha=0.01, batch_size='auto', learning_rate='constant', learning_rate_init=0.01, max_iter=1000, shuffle=False, tol=0.0001, verbose=False, early_stopping= True, validation_fraction=0.1, beta_1=0.9, beta_2=0.999, epsilon=1e-08)
-coalgame_nn_reg = cg.CoalitionalGame(nn_reg, x_train.columns, x_train, np.ravel(y_train), x_test, np.ravel(y_test), m = 1)
+nn_reg = MLPRegressor(hidden_layer_sizes=(60, 20),  activation='logistic', solver='adam', alpha=0.01, batch_size='auto', learning_rate='constant', learning_rate_init=0.01, max_iter=1000, shuffle=False, tol=0.0001, verbose=False, early_stopping= True, validation_fraction=0.1, beta_1=0.9, beta_2=0.999, epsilon=1e-08)
+coalgame_nn_reg = cg.CoalitionalGame(nn_reg, x_train.columns, x_train, np.ravel(y_train), x_test, np.ravel(y_test), m = 5)
 coalgame_nn_reg.explainerContribution('*')
 print(coalgame_nn_reg.fi_i_contributions)
 coalgame_nn_reg.plot()
