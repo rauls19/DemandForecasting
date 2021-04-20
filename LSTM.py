@@ -1,5 +1,5 @@
 """
-Usage: Coalitional Game, Approximating the contribution of the i-th feature’s value
+Usage: LSTM model
 Python version: 3.9.X
 Author: rauls19
 """
