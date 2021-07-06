@@ -11,9 +11,11 @@ import random
 from sklearn.linear_model import LinearRegression
 import xgboost as xgb
 import os
-import CoalitionalGame as cg
+from CoalitionalGame import CoalitionalGame
 from sklearn.feature_selection import RFE
 from sklearn.neural_network import MLPRegressor
+from LSTM import LSTM
+
 
 data_info_original = pd.read_csv('info_data.csv')
 data_info_original = data_info_original.drop(columns = ['DAY_OF_WEEK'])
@@ -89,44 +91,40 @@ x_test = pd.DataFrame(normalizer.fit_transform(x_test), columns= x_test.columns,
 columns = ['ANO_FACTURA', 'MES_FACTURA', 'FECHA_FACTURA', 'TEMPORADA_COMERCIAL_ID', 'PRODUCTO_ID', 'TALLA', 'ESFUERZO_VENTA_ID', 'NUMERO_DEUDOR_PAIS_ID', 'JERARQUIA_PROD_ID', 'GRUPO_ARTICULO_PRODUCTO_ID', 'GENERO_PRODUCTO', 'CATEGORIA', 'TIPOLOGIA', 'CONSUMER_COLOR', 'CREMALLERA', 'CORDONES', 'OUTSOLE_SUELA_TIPO', 'OUTSOLE_SUELA_SUBTIPO', 'PLANTILLA_EXTRAIBLE', 'CONTACTO_SN', 'EDAD_SN', 'GENERO_CONTACTO', 'EDAD_COMPRA', 'CIUDAD_CONTACTO', 'IDIOMA_CONTACTO']
 
 # INI - TESTING LINEAR MODEL
-# lm_model = LinearRegression()
-# coalgame_lm = cg.CoalitionalGame(lm_model, columns, x_train, y_train, x_test, y_test, m = 10)
-# coalgame_lm.explainerContribution('*')
-# print(coalgame_lm.fi_i_contributions)
-# coalgame_lm.plot()
+lm_model = LinearRegression()
+coalgame_lm = CoalitionalGame(lm_model, columns, x_train, y_train, x_test, y_test, m = 10)
+coalgame_lm.explainerContribution('*')
+print(coalgame_lm.fi_i_contributions)
+coalgame_lm.plot()
 # END
 
 # INI - TESTING XGBOOST
-# def removeFeatures(dt_train, dt_test, rfe_model):
-#     chosen = pd.DataFrame(rfe_model.support_, index=dt_train.columns, columns=['Rank'])
-#     featuresnotselected = []
-#     for k, v in zip(chosen.index, chosen.values):
-#         if v == False:
-#             featuresnotselected.append(k)
-#     dt_train_final = dt_train.drop(columns= featuresnotselected)
-#     dt_test_final = dt_test.drop(columns= featuresnotselected)
-#     return dt_train_final, dt_test_final
+def removeFeatures(dt_train, dt_test, rfe_model):
+    chosen = pd.DataFrame(rfe_model.support_, index=dt_train.columns, columns=['Rank'])
+    featuresnotselected = []
+    for k, v in zip(chosen.index, chosen.values):
+        if v == False:
+            featuresnotselected.append(k)
+    dt_train_final = dt_train.drop(columns= featuresnotselected)
+    dt_test_final = dt_test.drop(columns= featuresnotselected)
+    return dt_train_final, dt_test_final
 
-# n_features_optimal = 21 # model_cv.best_params_['n_features_to_select']
-# xgbm = xgb.XGBRegressor(learning_rate =0.01, n_estimators=215, max_depth=10, min_child_weight=0.8, subsample=1, nthread=4)
-# rfe = RFE(xgbm, n_features_to_select= n_features_optimal)             
-# rfe = rfe.fit(x_train, y_train)
-# x_train_XGBM, x_test_XGBM = removeFeatures(x_train, x_test, rfe)
-# xgbm = xgb.XGBRegressor(learning_rate =0.01, n_estimators=215, max_depth=10, min_child_weight=0.8, subsample=1, nthread=4)
-# coalgame_xgb = cg.CoalitionalGame(xgbm, x_train_XGBM.columns, x_train_XGBM, y_train, x_test_XGBM, y_test, m = 5)
-# coalgame_xgb.explainerContribution('*')
-# print(coalgame_xgb.fi_i_contributions)
-# coalgame_xgb.plot()
+n_features_optimal = 21 # model_cv.best_params_['n_features_to_select']
+xgbm = xgb.XGBRegressor(learning_rate =0.01, n_estimators=215, max_depth=10, min_child_weight=0.8, subsample=1, nthread=4)
+rfe = RFE(xgbm, n_features_to_select= n_features_optimal)             
+rfe = rfe.fit(x_train, y_train)
+x_train_XGBM, x_test_XGBM = removeFeatures(x_train, x_test, rfe)
+xgbm = xgb.XGBRegressor(learning_rate =0.01, n_estimators=215, max_depth=10, min_child_weight=0.8, subsample=1, nthread=4)
+coalgame_xgb = CoalitionalGame(xgbm, x_train_XGBM.columns, x_train_XGBM, y_train, x_test_XGBM, y_test, m = 5)
+coalgame_xgb.explainerContribution('*')
+print(coalgame_xgb.fi_i_contributions)
+coalgame_xgb.plot()
 # END
 
 # INI - TESTING MLP
 nn_reg = MLPRegressor(hidden_layer_sizes=(60, 20),  activation='logistic', solver='adam', alpha=0.01, batch_size='auto', learning_rate='constant', learning_rate_init=0.01, max_iter=1000, shuffle=False, tol=0.0001, verbose=False, early_stopping= True, validation_fraction=0.1, beta_1=0.9, beta_2=0.999, epsilon=1e-08)
-coalgame_nn_reg = cg.CoalitionalGame(nn_reg, x_train.columns, x_train, np.ravel(y_train), x_test, np.ravel(y_test), m = 5)
+coalgame_nn_reg = CoalitionalGame(nn_reg, x_train.columns, x_train, np.ravel(y_train), x_test, np.ravel(y_test), m = 5)
 coalgame_nn_reg.explainerContribution('*')
 print(coalgame_nn_reg.fi_i_contributions)
 coalgame_nn_reg.plot()
-# END
-
-# INI - TESTING LSTM
-
 # END

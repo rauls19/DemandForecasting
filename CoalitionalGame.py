@@ -32,9 +32,9 @@ class CoalitionalGame:
         self.__features_N = []
 
     def __checkModelAvailability(self):
-        x = pd.DataFrame(np.random.choice(range(20), size=(50, 4)))
-        y = pd.DataFrame(pd.DataFrame(np.random.choice(range(10), size=(50, 1))))
         try:
+            x = pd.DataFrame(np.random.choice(range(20), size=(50,4)))
+            y = pd.DataFrame(pd.DataFrame(np.random.choice(range(10), size= (50,1))))
             self.__model.fit(x, np.ravel(y))
             return True            
         except Exception as e:
